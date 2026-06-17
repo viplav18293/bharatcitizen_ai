@@ -1,0 +1,23 @@
+Title: Driving License (DL) in India
+Overview: A Driving License is an official document issued by the Government of India permitting individuals to operate various types of motor vehicles.
+Eligibility: 
+- 16 years (for 50cc engine capacity without gear).
+- 18 years (for light motor vehicles with gear).
+- 20 years (for transport vehicles).
+Required Documents:
+- Proof of Age: Birth Certificate, 10th Class Certificate, PAN Card.
+- Proof of Address: Aadhaar Card, Voter ID, Ration Card.
+- Medical Certificate (Form 1A) for transport vehicles or applicants over 40.
+Fees:
+- Learner's License: ₹150 + ₹50 (test fee).
+- Permanent License: ₹200 + ₹300 (test fee).
+Steps to Apply:
+1. Visit the Sarathi Parivahan portal.
+2. Apply for 'Learner License' first.
+3. Fill the form, upload documents, and pay fee.
+4. Book slot for LL test. Pass the test to get LL.
+5. After 30 days of LL, apply for 'Driving License'.
+6. Book slot for driving test. Pass the test to get DL.
+Official Portal: https://parivahan.gov.in
+Sources: https://parivahan.gov.in/parivahan//en/content/driving-licence-0
+Authority: Ministry of Road Transport and Highways, Government of India.
