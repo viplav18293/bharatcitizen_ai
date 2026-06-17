@@ -1,0 +1,17 @@
+Title: Voter ID Card (EPIC)
+Overview: The Elector's Photo Identity Card (EPIC) is an identity document issued by the Election Commission of India to adult citizens.
+Eligibility: Indian citizens aged 18 years or above on the qualifying date (1st January of the year).
+Required Documents:
+- Proof of Identity: Aadhaar Card, PAN Card, Passport.
+- Proof of Address: Aadhaar Card, Water Bill, Electricity Bill.
+- Passport size photograph.
+Fees: None (Free of cost).
+Steps to Apply:
+1. Visit the Voter Service Portal (voters.eci.gov.in).
+2. Click on 'New Registration for General Electors' (Form 6).
+3. Fill in personal details, address, and upload documents.
+4. Submit and note the Reference ID for tracking.
+5. Booth Level Officer (BLO) will visit for field verification.
+Official Portal: https://voters.eci.gov.in
+Sources: https://eci.gov.in/voters/voter-electronic-guide-epic/
+Authority: Election Commission of India.

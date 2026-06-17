@@ -1,0 +1,18 @@
+Title: PM Kisan Samman Nidhi
+Overview: PM Kisan is a Central Sector scheme with 100% funding from Government of India. It provides an income support of ₹6,000 per year in three equal installments to all landholding farmer families.
+Eligibility: All landholding farmer families, subject to certain exclusion criteria (e.g., institutional landholders, professionals like doctors/engineers, high-income taxpayers).
+Required Documents:
+- Aadhaar Card (Mandatory).
+- Landholding Documents (Khata/Khesra).
+- Bank Account Details.
+- Mobile Number linked with Aadhaar.
+Fees: None (Free of cost).
+Steps to Apply:
+1. Visit the PM Kisan portal.
+2. Click on 'New Farmer Registration'.
+3. Enter Aadhaar number and mobile number.
+4. Fill the registration form with land details.
+5. Submit for verification by State/UT Government.
+Official Portal: https://pmkisan.gov.in
+Sources: https://pmkisan.gov.in/About.aspx
+Authority: Ministry of Agriculture and Farmers Welfare, Government of India.

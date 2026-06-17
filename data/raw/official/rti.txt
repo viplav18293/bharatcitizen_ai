@@ -1,0 +1,21 @@
+Title: Right to Information (RTI)
+Overview: The RTI Act, 2005 empowers Indian citizens to seek information from public authorities, making the government more accountable and transparent.
+Eligibility: Any citizen of India can file an RTI request.
+Required Documents:
+- No specific documents required for the application.
+- Proof of BPL (Below Poverty Line) category to waive fees.
+Fees:
+- Application Fee: ₹10.
+- Photocopy Charges: ₹2 per page.
+- Inspection of Records: No fee for the first hour; ₹5 for each subsequent hour.
+Steps to File Online:
+1. Visit the RTI Online portal.
+2. Click on 'Submit Request'.
+3. Select the Ministry/Department/Public Authority.
+4. Fill the personal details and the specific information sought.
+5. Pay the ₹10 fee online (waived for BPL).
+6. Submit and note the registration number.
+Processing Time: Information must be provided within 30 days (48 hours if it concerns life or liberty).
+Official Portal: https://rtionline.gov.in
+Sources: https://rtionline.gov.in/about-us.php
+Authority: Department of Personnel and Training, Government of India.

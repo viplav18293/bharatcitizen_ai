@@ -1,0 +1,20 @@
+Title: Permanent Account Number (PAN) Card
+Overview: PAN is a unique 10-character alphanumeric identifier, issued as a laminated card, by the Income Tax Department.
+Eligibility: Any person, company, or entity can apply for a PAN card. It is mandatory for taxpayers and for various financial transactions.
+Required Documents: 
+- Proof of Identity: Aadhaar Card, Voter ID, Passport.
+- Proof of Address: Aadhaar Card, Electricity Bill, Bank Statement.
+- Date of Birth Proof: Birth Certificate, 10th Class Certificate.
+Fees: 
+- Physical PAN Card: ₹107 (within India), ₹1017 (outside India).
+- e-PAN Card: ₹72.
+Steps to Apply:
+1. Visit the NSDL (now Protean) or UTIITSL website.
+2. Select Form 49A for Indian Citizens.
+3. Fill in the details and upload documents.
+4. Pay the fee online.
+5. Send the acknowledgment and documents to the income tax office (if not using Aadhaar-based e-KYC).
+Processing Time: 15 to 20 working days.
+Official Portal: https://www.incometax.gov.in
+Sources: https://www.incometax.gov.in/iec/foportal/help/permanent-account-number
+Authority: Income Tax Department, Government of India.

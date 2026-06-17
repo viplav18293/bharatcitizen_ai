@@ -1,0 +1,18 @@
+Aadhaar is a 12-digit unique identity number that can be obtained voluntarily by residents of India, based on their biometric and demographic data. 
+The data is collected by the Unique Identification Authority of India (UIDAI), a statutory authority established in January 2009 by the Government of India.
+
+How to apply for Aadhaar:
+1. Find an Aadhaar Enrollment Center near you.
+2. Fill the enrollment form.
+3. Provide biometrics (fingerprints and iris scan).
+4. Provide Proof of Identity (POI) and Proof of Address (POA).
+5. You will receive an acknowledgment slip with an Enrolment ID.
+
+Documents needed:
+- Proof of Identity: Voter ID, Passport, PAN Card, Ration Card.
+- Proof of Address: Bank Statement, Electricity Bill, Water Bill.
+
+Official Portal: https://uidai.gov.in
+Processing Time: 15 to 30 days.
+Fees: Free for first-time enrollment. Mandatory biometric update is also free.
+Update Aadhaar Address Online: You can update your address online through the 'myAadhaar' portal by providing valid proof of address.

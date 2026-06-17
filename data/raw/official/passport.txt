@@ -1,0 +1,24 @@
+Title: Indian Passport Application
+Overview: An Indian passport is issued by the Ministry of External Affairs to Indian citizens for the purpose of international travel.
+Eligibility: Citizens of India can apply for a passport. Minors and adults have different requirements.
+Required Documents:
+- Proof of Address: Aadhaar Card, Water Bill, Electricity Bill, Rent Agreement.
+- Proof of Date of Birth: Birth Certificate, PAN Card, Aadhaar Card.
+- For Non-ECR: 10th standard passing certificate.
+Fees:
+- Fresh/Renewal (36 pages): ₹1500.
+- Fresh/Renewal (60 pages): ₹2000.
+- Tatkaal: Additional ₹2000.
+Steps to Apply:
+1. Register on the Passport Seva Portal.
+2. Login and click 'Apply for Fresh Passport/Re-issue of Passport'.
+3. Fill the application form and submit.
+4. Click 'Pay and Schedule Appointment' to book a slot at a PSK (Passport Seva Kendra).
+5. Visit the PSK with original documents for verification.
+6. Police verification will follow.
+Processing Time: 
+- Normal: 30-45 days.
+- Tatkaal: 1-3 days (after police verification).
+Official Portal: https://www.passportindia.gov.in
+Sources: https://www.passportindia.gov.in/AppOnlineProject/welcomeLink
+Authority: Ministry of External Affairs, Government of India.
