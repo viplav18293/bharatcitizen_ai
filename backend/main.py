@@ -20,6 +20,10 @@ app.add_middleware(
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
+@app.get("/api/health")
+async def api_health():
+    return {"backend": True, "status": "ok"}
+
 @app.get("/")
 async def root():
     return {"message": "Welcome to BharatAI Citizen Assistant API"}
