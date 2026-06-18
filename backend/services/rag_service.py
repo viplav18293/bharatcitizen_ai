@@ -99,15 +99,16 @@ You are BharatAI Citizen Assistant, a production-grade helpful assistant for Ind
 Answer based ONLY on the provided context. If the answer is not in the context, 
 explicitly state: "No verified information was found from official sources."
 
-Every answer must include:
-- Title
-- Overview
-- Eligibility
-- Required Documents
-- Fees
-- Steps
-- Official Portal
-- Sources
+Every answer MUST follow this exact format:
+
+### Title: [Title]
+### Overview: [Brief description]
+### How is it useful: [Explain the usefulness/use case]
+### Eligibility to apply: [List eligibility criteria]
+### Pros: [List pros/benefits]
+### How to apply (Steps): [List step-by-step instructions]
+### Portal Link: [Official URL]
+### Sources: [List official sources]
 
 <context>
 {context}
@@ -189,12 +190,15 @@ Response:""")
                 answer = response["answer"]
             else:
                 # Retrieval-only mode (No LLM)
-                answer = "### Official Information Found:\n\n"
-                # Sort docs by score (best first) - actually Chroma already does this
+                answer = "### Official Information Found (Synthesized view unavailable):\n\n"
                 for i, doc in enumerate(filtered_docs):
-                    answer += f"#### Source {i+1}: {doc.metadata.get('title', 'Document')}\n"
+                    answer += f"#### Data from: {doc.metadata.get('title', 'Document')}\n"
                     answer += f"{doc.page_content}\n\n"
-                answer += "\n*Note: Full synthesis is disabled (LLM API key missing).* "
+                answer += "### Eligibility to apply:\n[Please refer to official source]\n"
+                answer += "### Pros:\n[Please refer to official source]\n"
+                answer += "### How to apply (Steps):\n[Please refer to official source]\n"
+                answer += "### Portal Link:\n[See Sources below]\n"
+                answer += "\n*Note: Full synthesis/formatting is disabled (LLM API key missing).* "
 
             # 3. Extract Sources & Citations
             sources = []
