@@ -1,0 +1,21 @@
+stages:
+  - lint
+  - test
+  - build
+
+lint:
+  stage: lint
+  script:
+    - pip install ruff
+    - ruff check .
+
+test:
+  stage: test
+  script:
+    - pip install pytest
+    - pytest tests/
+
+build:
+  stage: build
+  script:
+    - docker build -t citizenai-assistant .

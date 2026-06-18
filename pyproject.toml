@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "citizenai-assistant"
+version = "0.1.0"
+description = "AI-powered citizen copilot for India"
+dependencies = [
+    "fastapi",
+    "langchain",
+    "chromadb",
+    "openai",
+    "uvicorn",
+    "pydantic",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+
+[tool.vulture]
+paths = ["backend"]
+min_confidence = 80

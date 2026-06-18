@@ -5,8 +5,8 @@ import sys
 # Add backend to path
 sys.path.append(os.path.join(os.getcwd(), "backend"))
 
-from app.services.ingestion_service import ingestion_service
-from app.core.config import settings
+from services.ingestion_service import ingestion_service
+from core.config import settings
 
 async def init_db():
     print("Initializing Database with sample data...")
