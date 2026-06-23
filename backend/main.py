@@ -17,15 +17,16 @@ from loguru import logger
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     from services.rag_service import rag_service
-
+    from core.config import settings
+    
     logger.info("Starting BharatAI Citizen Assistant backend")
     logger.info(f"API prefix: {settings.API_V1_STR}")
     logger.info(f"Vector DB: {settings.VECTOR_DB_TYPE} at {settings.CHROMA_DB_PATH}")
-    if settings.RAG_BACKGROUND_INIT:
-        asyncio.create_task(asyncio.to_thread(rag_service.initialize_once))
-        logger.info("RAG initialization scheduled in background")
-    else:
-        logger.warning("RAG background initialization disabled; set RAG_BACKGROUND_INIT=true to enable it")
+    
+    # Force initialization regardless of flag for now to fix health status
+    logger.info("Forcing RAG service initialization")
+    await asyncio.to_thread(rag_service.initialize_once)
+    logger.info("RAG initialization complete")
     yield
 
 
@@ -59,44 +60,35 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 @app.get("/health")
 async def root_health():
-    from services.adk_agents import citizen_assistant_agent
     from services.rag_service import rag_service
 
     rag_health = rag_service.get_health()
     return {
         "status": "ok" if rag_health.get("status") in {"online", "degraded"} else "degraded",
         "backend": True,
-        "rag": rag_health,
-        "adk": citizen_assistant_agent.get_status(),
+        "llm": rag_health["components"]["llm"],
+        "vectordb": rag_health["components"]["vectordb"],
+        "embeddings": rag_health["components"]["embeddings"],
+        "rag_ready": rag_health["status"] == "online"
     }
 
 @app.get("/api/health")
 async def api_health():
     return await root_health()
 
-@app.get("/api/admin/system")
-async def api_admin_system():
-    from api.endpoints.admin import get_system_status
-
-    return await get_system_status()
-
 @app.get("/admin/system", response_class=HTMLResponse)
 async def admin_system_dashboard():
-    from api.endpoints.admin import get_system_status
-
-    status = await get_system_status()
-    adk = status.get("adk", {})
-    rag = status.get("rag", {})
-    api = status.get("api", {})
+    from services.rag_service import rag_service
+    from services.adk_agents import citizen_assistant_agent
+    
+    rag_status = rag_service.get_health()
+    
     rows = {
-        "Backend Status": status.get("backend_status"),
-        "ADK Status": adk.get("status"),
-        "RAG Status": rag.get("status"),
-        "Vector DB Status": rag.get("components", {}).get("vectordb"),
-        "Document Count": rag.get("stats", {}).get("document_count"),
-        "Agent Count": adk.get("agent_count"),
-        "Memory Status": adk.get("memory_status"),
-        "API Status": api.get("status"),
+        "Backend Status": "Online",
+        "API Status": "Online",
+        "LLM Status": "Connected" if rag_status["components"]["llm"] else "Disconnected",
+        "Embedding Status": "Connected" if rag_status["components"]["embeddings"] else "Disconnected",
+        "Vector DB Status": "Connected" if rag_status["components"]["vectordb"] else "Disconnected",
     }
     body = "".join(f"<tr><th>{key}</th><td>{value}</td></tr>" for key, value in rows.items())
     return f"""
