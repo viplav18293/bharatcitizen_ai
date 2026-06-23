@@ -9,7 +9,7 @@ description = "AI-powered citizen copilot for India"
 dependencies = [
     "fastapi",
     "langchain",
-    "chromadb",
+    {name = "chromadb", version = "*", markers = "python_version < '3.13'"},
     "openai",
     "uvicorn",
     "pydantic",
