@@ -23,10 +23,9 @@ async def lifespan(app: FastAPI):
     logger.info(f"API prefix: {settings.API_V1_STR}")
     logger.info(f"Vector DB: {settings.VECTOR_DB_TYPE} at {settings.CHROMA_DB_PATH}")
     
-    # Force initialization regardless of flag for now to fix health status
-    logger.info("Forcing RAG service initialization")
-    await asyncio.to_thread(rag_service.initialize_once)
-    logger.info("RAG initialization complete")
+    # Initialize in background to allow API to start immediately
+    asyncio.create_task(asyncio.to_thread(rag_service.initialize_once))
+    logger.info("RAG initialization scheduled in background")
     yield
 
 

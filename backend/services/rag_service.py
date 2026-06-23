@@ -66,7 +66,10 @@ class RAGService:
 
             # 1. Initialize Local Embeddings
             logger.info(f"Loading local embedding model: {settings.EMBEDDING_MODEL}")
-            self.embeddings = HuggingFaceEmbeddings(model_name=settings.EMBEDDING_MODEL)
+            self.embeddings = HuggingFaceEmbeddings(
+                model_name=settings.EMBEDDING_MODEL,
+                model_kwargs={'local_files_only': True}
+            )
             self.status["embeddings"] = True
 
             # 2. Initialize Vector Store (Chroma)
