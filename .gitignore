@@ -25,7 +25,7 @@ logs/
 
 # Testing
 .coverage
-pytest_cache/
+.pytest_cache/
 htmlcov/
 
 # Streamlit

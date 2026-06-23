@@ -1,16 +1,17 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from typing import List
-from services.rag_service import rag_service
-from schemas.chat import Message, ChatResponse
+from fastapi import APIRouter
+from loguru import logger
+
+from schemas.chat import ChatRequest, ChatResponse
+from services.adk_agents import citizen_assistant_agent
 
 router = APIRouter()
 
-class ChatRequest(BaseModel):
-    message: str
-    history: List[Message] = []
-    language: str = "en"
-
 @router.post("", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
-    return await rag_service.query(request.message, request.history, request.language)
+    logger.info("POST /api/v1/chat received")
+    return await citizen_assistant_agent.query(
+        message=request.message,
+        history=request.history,
+        language=request.language,
+        session_id=request.session_id,
+    )

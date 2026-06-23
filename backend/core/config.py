@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     
     LOG_LEVEL: str = "INFO"
     SIMILARITY_THRESHOLD: float = 0.35  # Minimum similarity score for retrieval
+    RAG_INIT_ON_IMPORT: bool = False
+    RAG_BACKGROUND_INIT: bool = False
+    GOOGLE_ADK_ENABLED: bool = False
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True, extra="ignore")
 

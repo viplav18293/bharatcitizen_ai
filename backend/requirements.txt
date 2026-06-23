@@ -15,3 +15,4 @@ tiktoken
 loguru==0.7.2
 pypdf
 rank-bm25
+google-adk

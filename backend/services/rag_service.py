@@ -1,54 +1,32 @@
 import os
-import sys
-from typing import List, Optional, Dict, Any, Tuple
-import json
+from typing import List, Dict, Any, Optional
+from urllib.parse import urlparse
 from schemas.chat import Message, ChatResponse, Source
 from core.config import settings
 from loguru import logger
 
 # 1. Imports with safety
 IMPORT_ERRORS = {}
-try:
-    from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-    from langchain_community.vectorstores import Chroma
-    from langchain_core.prompts import ChatPromptTemplate
-    from langchain_classic.chains import create_retrieval_chain
-    from langchain_classic.chains.combine_documents import create_stuff_documents_chain
-    from langchain_huggingface import HuggingFaceEmbeddings
-    
-    # Qdrant is optional
-    try:
-        from langchain_qdrant import QdrantVectorStore
-        import qdrant_client
-    except ImportError:
-        QdrantVectorStore = None
-        qdrant_client = None
-        
-except ImportError as exc:
-    logger.error(f"Failed to import major RAG dependencies: {exc}")
-    IMPORT_ERRORS["langchain"] = str(exc)
-    ChatOpenAI = None
-    OpenAIEmbeddings = None
-    Chroma = None
-    ChatPromptTemplate = None
-    create_retrieval_chain = None
-    create_stuff_documents_chain = None
-    HuggingFaceEmbeddings = None
+ChatOpenAI = None
+Chroma = None
+ChatPromptTemplate = None
+create_retrieval_chain = None
+create_stuff_documents_chain = None
+HuggingFaceEmbeddings = None
 
 # Official Source Registry (Phase 4)
 OFFICIAL_DOMAINS = [
     "uidai.gov.in", "incometax.gov.in", "eci.gov.in", "passportindia.gov.in",
     "parivahan.gov.in", "digilocker.gov.in", "nta.ac.in", "upsc.gov.in",
     "pmkisan.gov.in", "nha.gov.in", "pmaymis.gov.in", "rtionline.gov.in",
-    "indiacode.nic.in", "labour.gov.in", "consumerhelpline.gov.in",
-    "eshram.gov.in", "epfindia.gov.in", "scholarships.gov.in", "startupindia.gov.in",
-    "mudra.org.in", "pmsvanidhi.mohua.gov.in", "india.gov.in"
+    "indiacode.nic.in", "labour.gov.in"
 ]
 
 class RAGService:
     def __init__(self):
         self.retrieval_chain = None
         self.ready = False
+        self.initializing = False
         self.vector_store = None
         self.status = {
             "llm": False,
@@ -56,18 +34,36 @@ class RAGService:
             "vectordb": False,
             "errors": []
         }
-        self.initialize()
+        if settings.RAG_INIT_ON_IMPORT:
+            self.initialize_once()
+
+    def initialize_once(self):
+        if self.ready or self.initializing:
+            return
+        self.initializing = True
+        try:
+            self.initialize()
+        finally:
+            self.initializing = False
 
     def initialize(self):
         logger.info("Initializing BharatAI RAG Pipeline...")
-        
-        if IMPORT_ERRORS:
-            err_msg = f"Dependency error: {IMPORT_ERRORS.get('langchain')}"
-            self.status["errors"].append(err_msg)
-            logger.error(err_msg)
-            return
 
         try:
+            global ChatOpenAI
+            global Chroma
+            global ChatPromptTemplate
+            global create_retrieval_chain
+            global create_stuff_documents_chain
+            global HuggingFaceEmbeddings
+
+            from langchain_openai import ChatOpenAI
+            from langchain_community.vectorstores import Chroma
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain_classic.chains import create_retrieval_chain
+            from langchain_classic.chains.combine_documents import create_stuff_documents_chain
+            from langchain_huggingface import HuggingFaceEmbeddings
+
             # 1. Initialize Local Embeddings
             logger.info(f"Loading local embedding model: {settings.EMBEDDING_MODEL}")
             self.embeddings = HuggingFaceEmbeddings(model_name=settings.EMBEDDING_MODEL)
@@ -139,12 +135,48 @@ Response:""")
     def _is_official_source(self, url: str) -> bool:
         if not url:
             return False
-        return any(domain in url.lower() for domain in OFFICIAL_DOMAINS)
+        parsed = urlparse(url if "://" in url else f"https://{url}")
+        host = parsed.netloc.lower()
+        return any(host == domain or host.endswith(f".{domain}") for domain in OFFICIAL_DOMAINS)
+
+    def validate_citations(self, sources: List[Source]) -> List[Source]:
+        return [source for source in sources if self._is_official_source(source.url or "")]
+
+    def retrieve_documents(self, message: str, k: int = 5) -> List[Dict[str, Any]]:
+        if not self.vector_store:
+            logger.warning("Retrieval requested before vector store initialization.")
+            return []
+
+        docs_with_scores = self.vector_store.similarity_search_with_score(message, k=k)
+        documents = []
+        for doc, score in docs_with_scores:
+            source_url = doc.metadata.get("source_url") or doc.metadata.get("url")
+            if not self._is_official_source(source_url):
+                logger.warning(f"Rejected unofficial source: {source_url}")
+                continue
+            documents.append({
+                "title": doc.metadata.get("title", "Official Source"),
+                "url": source_url,
+                "snippet": doc.page_content[:500],
+                "score": score,
+                "document": doc,
+            })
+        return documents
 
     async def query(self, message: str, history: List[Message], language: str = "en") -> ChatResponse:
         try:
             # 1. Retrieval with Similarity Score
             logger.info(f"Query: {message}")
+
+            if not self.vector_store:
+                logger.error("RAG query requested while vector store is unavailable.")
+                return ChatResponse(
+                    answer="No verified information was found from official sources.",
+                    sources=[],
+                    confidence_score=0.0,
+                    official_portal_link=None,
+                    suggested_questions=["Check /health for backend status."]
+                )
             
             docs_with_scores = self.vector_store.similarity_search_with_score(message, k=5)
             
@@ -166,10 +198,11 @@ Response:""")
                 # REQ 9: Only return 'No verified info' if retrieval genuinely returns 0 documents.
                 # Here we include official documents even if confidence is lower than threshold, 
                 # but we still log the warning.
-                if self._is_official_source(doc.metadata.get("source_url")):
+                source_url = doc.metadata.get("source_url") or doc.metadata.get("url")
+                if self._is_official_source(source_url):
                     filtered_docs.append(doc)
                 else:
-                    logger.warning(f"Rejected unofficial source: {doc.metadata.get('source_url')}")
+                    logger.warning(f"Rejected unofficial source: {source_url}")
 
             if not filtered_docs:
                 logger.warning("No official documents found in search results.")
@@ -206,7 +239,7 @@ Response:""")
             official_portal = None
             
             for doc in filtered_docs:
-                url = doc.metadata.get("source_url")
+                url = doc.metadata.get("source_url") or doc.metadata.get("url")
                 title = doc.metadata.get("title", "Official Source")
                 if url and url not in seen_urls:
                     sources.append(Source(title=title, url=url))
@@ -240,8 +273,10 @@ Response:""")
             except:
                 pass
         
+        component_ready = self.status["embeddings"] or self.status["vectordb"] or self.status["llm"]
         return {
-            "status": "online" if self.ready else "offline",
+            "status": "online" if self.ready else ("degraded" if component_ready else "offline"),
+            "initializing": self.initializing,
             "components": {
                 "llm": self.status["llm"],
                 "embeddings": self.status["embeddings"],
@@ -271,6 +306,7 @@ Response:""")
                 pass
         
         return {
+            "status": "online" if self.ready else ("initializing" if self.initializing else "degraded"),
             "documents": doc_count,
             "chunks": chunk_count,
             "embeddings": chunk_count, # 1:1 ratio

@@ -58,7 +58,23 @@ cd backend
 python -m venv venv
 source venv/bin/activate # or venv\Scripts\activate on Windows
 pip install -r requirements.txt
-uvicorn app.main:app --reload
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Health and system checks:
+```bash
+curl http://localhost:8000/health
+curl http://localhost:8000/api/health
+curl http://localhost:8000/api/admin/system
+```
+
+Production flags:
+```env
+GOOGLE_ADK_ENABLED=true
+RAG_BACKGROUND_INIT=true
+LLM_API_KEY=your-api-key
+LLM_BASE_URL=https://api.openai.com/v1
+LLM_MODEL=gpt-4o
 ```
 
 **Frontend:**

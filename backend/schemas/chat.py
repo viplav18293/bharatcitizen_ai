@@ -8,6 +8,8 @@ class Message(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     history: List[Message] = []
+    language: str = "en"
+    session_id: Optional[str] = None
 
 class Source(BaseModel):
     title: str
