@@ -1,10 +1,56 @@
 import streamlit as st
 import requests
 import os
+import subprocess
+import sys
+import time
 from frontend.i18n.translator import language_selector, get_text
 
 # Configuration
 API_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
+BACKEND_DIR = os.path.join(os.path.dirname(__file__), "backend")
+
+
+def backend_is_available() -> bool:
+    try:
+        response = requests.get(f"{API_URL}/health", timeout=2)
+        return response.status_code == 200
+    except requests.RequestException:
+        return False
+
+
+def ensure_backend_running() -> bool:
+    if backend_is_available():
+        return True
+
+    if API_URL not in {"http://localhost:8000", "http://127.0.0.1:8000"}:
+        return False
+
+    if not st.session_state.get("backend_autostart_attempted"):
+        st.session_state.backend_autostart_attempted = True
+        subprocess.Popen(
+            [
+                sys.executable,
+                "-m",
+                "uvicorn",
+                "main:app",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                "8000",
+            ],
+            cwd=BACKEND_DIR,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+        )
+
+    for _ in range(20):
+        if backend_is_available():
+            return True
+        time.sleep(0.5)
+
+    return False
 
 st.set_page_config(page_title="BharatAI Citizen Assistant", page_icon="🇮🇳", layout="wide")
 
@@ -41,6 +87,9 @@ if prompt := st.chat_input(get_text("ask_input")):
     with st.chat_message("assistant"):
         with st.spinner(get_text("thinking")):
             try:
+                if not ensure_backend_running():
+                    raise RuntimeError("Backend is not running on port 8000.")
+
                 # Backend endpoint: /api/v1/chat
                 response = requests.post(f"{API_URL}/api/v1/chat", json={
                     "message": prompt, 
