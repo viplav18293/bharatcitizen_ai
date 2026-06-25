@@ -23,10 +23,22 @@ async def lifespan(app: FastAPI):
     logger.info(f"API prefix: {settings.API_V1_STR}")
     logger.info(f"Vector DB: {settings.VECTOR_DB_TYPE} at {settings.CHROMA_DB_PATH}")
     
-    # Initialize in background to allow API to start immediately
-    asyncio.create_task(asyncio.to_thread(rag_service.initialize_once))
-    logger.info("RAG initialization scheduled in background")
+    if settings.RAG_BACKGROUND_INIT:
+        task = asyncio.create_task(asyncio.to_thread(rag_service.initialize_once))
+        task.add_done_callback(_log_background_task_result)
+        logger.info("RAG initialization scheduled in background")
+    else:
+        logger.info("RAG background initialization disabled")
     yield
+
+
+def _log_background_task_result(task: asyncio.Task):
+    try:
+        task.result()
+    except asyncio.CancelledError:
+        logger.warning("Background RAG initialization was cancelled")
+    except Exception as exc:
+        logger.exception(f"Background RAG initialization crashed: {exc}")
 
 
 app = FastAPI(
@@ -62,18 +74,27 @@ async def root_health():
     from services.rag_service import rag_service
 
     rag_health = rag_service.get_health()
+    components = rag_health.get("components", {})
     return {
         "status": "ok" if rag_health.get("status") in {"online", "degraded"} else "degraded",
         "backend": True,
-        "llm": rag_health["components"]["llm"],
-        "vectordb": rag_health["components"]["vectordb"],
-        "embeddings": rag_health["components"]["embeddings"],
-        "rag_ready": rag_health["status"] == "online"
+        "llm": components.get("llm", False),
+        "vectordb": components.get("vectordb", False),
+        "embeddings": components.get("embeddings", False),
+        "rag_ready": rag_health.get("status") == "online"
     }
 
 @app.get("/api/health")
 async def api_health():
     return await root_health()
+
+
+@app.get("/api/admin/system")
+async def legacy_api_admin_system():
+    from api.endpoints.admin import get_system_status
+
+    return await get_system_status()
+
 
 @app.get("/admin/system", response_class=HTMLResponse)
 async def admin_system_dashboard():

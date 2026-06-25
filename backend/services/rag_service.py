@@ -1,4 +1,5 @@
 import os
+import threading
 from typing import List, Dict, Any, Optional
 from urllib.parse import urlparse
 from schemas.chat import Message, ChatResponse, Source
@@ -28,6 +29,9 @@ class RAGService:
         self.ready = False
         self.initializing = False
         self.vector_store = None
+        self.embeddings = None
+        self.llm = None
+        self._init_lock = threading.Lock()
         self.status = {
             "llm": False,
             "embeddings": False,
@@ -35,16 +39,20 @@ class RAGService:
             "errors": []
         }
         if settings.RAG_INIT_ON_IMPORT:
-            self.initialize_once()
+            logger.warning(
+                "RAG_INIT_ON_IMPORT is ignored to keep backend imports and worker startup non-blocking. "
+                "Use RAG_BACKGROUND_INIT=true to initialize RAG after the API starts."
+            )
 
     def initialize_once(self):
-        if self.ready or self.initializing:
-            return
-        self.initializing = True
-        try:
-            self.initialize()
-        finally:
-            self.initializing = False
+        with self._init_lock:
+            if self.ready or self.initializing:
+                return
+            self.initializing = True
+            try:
+                self.initialize()
+            finally:
+                self.initializing = False
 
     def initialize(self):
         logger.info("Initializing BharatAI RAG Pipeline...")
@@ -150,7 +158,12 @@ Response:""")
             logger.warning("Retrieval requested before vector store initialization.")
             return []
 
-        docs_with_scores = self.vector_store.similarity_search_with_score(message, k=k)
+        try:
+            docs_with_scores = self.vector_store.similarity_search_with_score(message, k=k)
+        except Exception as exc:
+            logger.exception(f"Document retrieval failed: {exc}")
+            return []
+
         documents = []
         for doc, score in docs_with_scores:
             source_url = doc.metadata.get("source_url") or doc.metadata.get("url")
@@ -181,7 +194,17 @@ Response:""")
                     suggested_questions=["Check /health for backend status."]
                 )
             
-            docs_with_scores = self.vector_store.similarity_search_with_score(message, k=5)
+            try:
+                docs_with_scores = self.vector_store.similarity_search_with_score(message, k=5)
+            except Exception as exc:
+                logger.exception(f"Vector search failed: {exc}")
+                return ChatResponse(
+                    answer="No verified information was found from official sources.",
+                    sources=[],
+                    confidence_score=0.0,
+                    official_portal_link=None,
+                    suggested_questions=["Check /health for backend status."]
+                )
             
             if not docs_with_scores:
                 logger.warning("Chroma returned 0 results.")
