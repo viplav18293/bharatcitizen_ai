@@ -1,28 +1,34 @@
 import streamlit as st
-import requests
 import os
+import sys
+
+# Ensure backend directory is in path
+BACKEND_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "backend")
+if BACKEND_DIR not in sys.path:
+    sys.path.insert(0, BACKEND_DIR)
+
+from backend.services.rag_service import rag_service
 
 st.set_page_config(page_title="BharatAI System Status", page_icon="⚙️")
 
 st.title("System Status")
 
-backend_url = os.getenv("BACKEND_URL", "http://localhost:8000")
-
 def check_backend():
     try:
-        response = requests.get(f"{backend_url}/api/v1/health/", timeout=2)
-        return response.status_code == 200, response.json()
-    except:
-        return False, None
+        rag_service.initialize_once()
+        health = rag_service.get_health()
+        return health["status"] in ["online", "degraded"], health
+    except Exception as e:
+        return False, {"error": str(e)}
 
 is_healthy, status = check_backend()
 
 if is_healthy:
-    st.success("Backend Reachable")
+    st.success("Backend Reachable (In-Process)")
     st.json(status)
 else:
-    st.error("Backend Offline")
-    st.write(f"Could not connect to {backend_url}. Ensure the backend is running.")
+    st.error("Backend Offline or Degraded")
+    st.write("Could not initialize the internal backend services.")
 
 st.subheader("Components")
-st.write(f"Backend URL: {backend_url}")
+st.write("Running directly in Streamlit (No external API calls)")

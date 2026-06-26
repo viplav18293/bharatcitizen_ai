@@ -1,61 +1,60 @@
 import streamlit as st
-import requests
 import os
-import subprocess
 import sys
-import time
-from frontend.i18n.translator import language_selector, get_text
+import asyncio
+from loguru import logger
 
-# Configuration
-API_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
+# Ensure backend directory is in path before importing backend modules
 BACKEND_DIR = os.path.join(os.path.dirname(__file__), "backend")
+if BACKEND_DIR not in sys.path:
+    sys.path.insert(0, BACKEND_DIR)
 
-
-def backend_is_available() -> bool:
-    try:
-        response = requests.get(f"{API_URL}/health", timeout=2)
-        return response.status_code == 200
-    except requests.RequestException:
-        return False
-
-
-def ensure_backend_running() -> bool:
-    if backend_is_available():
-        return True
-
-    if API_URL not in {"http://localhost:8000", "http://127.0.0.1:8000"}:
-        return False
-
-    if not st.session_state.get("backend_autostart_attempted"):
-        st.session_state.backend_autostart_attempted = True
-        subprocess.Popen(
-            [
-                sys.executable,
-                "-m",
-                "uvicorn",
-                "main:app",
-                "--host",
-                "127.0.0.1",
-                "--port",
-                "8000",
-            ],
-            cwd=BACKEND_DIR,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
-        )
-
-    for _ in range(20):
-        if backend_is_available():
-            return True
-        time.sleep(0.5)
-
-    return False
+from frontend.i18n.translator import language_selector, get_text
+from backend.services.adk_agents import citizen_assistant_agent
+from backend.services.rag_service import rag_service
+from backend.schemas.chat import Message as BackendMessage
 
 st.set_page_config(page_title="BharatAI Citizen Assistant", page_icon="🇮🇳", layout="wide")
 
+@st.cache_resource(show_spinner="Initializing AI Engine...")
+def init_backend():
+    # Initialize RAG in-process
+    rag_service.initialize_once()
+    
+    # Self Test
+    test_passed = False
+    error_msg = ""
+    try:
+        if rag_service.ready:
+            # Test retrieval to verify vector DB is working
+            docs = rag_service.retrieve_documents("Aadhaar", k=1)
+            test_passed = True
+        else:
+            error_msg = "RAG service failed to initialize."
+    except Exception as e:
+        error_msg = str(e)
+        logger.error(f"Startup validation failed: {e}")
+        
+    return rag_service.get_health(), test_passed, error_msg
+
+status, test_passed, error_msg = init_backend()
+
 # Sidebar
 language_selector()
+
+st.sidebar.title("System Status")
+if test_passed:
+    st.sidebar.success("✅ System Online (In-Process)")
+else:
+    st.sidebar.error("⚠️ System Degraded")
+    st.sidebar.caption(error_msg)
+
+st.sidebar.write("### Diagnostics")
+st.sidebar.write(f"- **Embeddings:** {'✅' if status['components']['embeddings'] else '❌'}")
+st.sidebar.write(f"- **Vector DB:** {'✅' if status['components']['vectordb'] else '❌'}")
+st.sidebar.write(f"- **LLM:** {'✅' if status['components']['llm'] else '❌'}")
+st.sidebar.write(f"- **Documents Indexed:** {status['stats'].get('document_count', 0)}")
+
 st.sidebar.title("Official Links")
 st.sidebar.write("Get help from official sources:")
 st.sidebar.markdown("""
@@ -87,26 +86,26 @@ if prompt := st.chat_input(get_text("ask_input")):
     with st.chat_message("assistant"):
         with st.spinner(get_text("thinking")):
             try:
-                if not ensure_backend_running():
-                    raise RuntimeError("Backend is not running on port 8000.")
-
-                # Backend endpoint: /api/v1/chat
-                response = requests.post(f"{API_URL}/api/v1/chat", json={
-                    "message": prompt, 
-                    "history": [],
-                    "language": st.session_state.get("language", "en")
-                })
-                if response.status_code == 200:
-                    data = response.json()
-                    answer = data.get("answer", "No answer received.")
-                    st.markdown(answer)
+                # Convert history to backend schemas
+                history = [
+                    BackendMessage(role=m["role"], content=m["content"]) 
+                    for m in st.session_state.messages[:-1]
+                ]
+                
+                # Execute AI/RAG directly in process (No localhost API calls)
+                response = asyncio.run(citizen_assistant_agent.query(
+                    message=prompt,
+                    history=history,
+                    language=st.session_state.get("language", "en"),
+                    session_id="streamlit_session"
+                ))
+                
+                st.markdown(response.answer)
+                
+                if response.official_portal_link:
+                    st.link_button(get_text("visit_portal"), response.official_portal_link)
                     
-                    if portal_link := data.get("official_portal_link"):
-                        st.link_button(get_text("visit_portal"), portal_link)
-                        
-                    st.session_state.messages.append({"role": "assistant", "content": answer})
-                else:
-                    st.error(f"Error ({response.status_code}): {response.text}")
+                st.session_state.messages.append({"role": "assistant", "content": response.answer})
             except Exception as e:
-                st.error(f"Failed to connect to backend at {API_URL}: {e}")
-                st.info("Ensure the FastAPI backend is running.")
+                logger.error(f"Internal error during chat generation: {e}")
+                st.error("System temporarily unavailable. Please try again.")
